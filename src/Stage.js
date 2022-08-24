@@ -22,8 +22,11 @@ class Stage {
   }
 
   init() {
+    // 创建渲染器
     this.createWebGlRender();
+    // 创建场景
     this.createScene();
+    // 创建相机（视角）
     this.createCamera();
     this.createPlane();
     this.createLight();
@@ -36,8 +39,36 @@ class Stage {
     scene.background = new THREE.Color(0xf5f5f5);
     this.scene = scene;
     if (this.axesHelpers) {
+      // 用于简单模拟3个坐标轴的对象.
+      // 红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴.
       scene.add(new THREE.AxesHelper(100));
     }
+  }
+
+  createCamera(near = 0.4) {
+    const { height, width, canvas, scene } = this;
+    console.log('height, width', height, width);
+    const far = width * 10;
+    // 创建正交相机
+    // 在这种投影模式下，无论物体距离相机距离远或者近，在最终渲染的图片中物体的大小都保持不变
+    const camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, near, far);
+    const cameraLookAtPostion = (this.cameraLookAtPostion = scene.position);
+    // 稍后调整相机位置
+    camera.position.set(-width * 4, -height * 2, height * 2);
+    camera.up.set(0, 0, 1);
+    camera.lookAt(cameraLookAtPostion);
+    this.camera = camera;
+
+    if (this.cameraHelpers) {
+      // 相机helper
+      const helper = new THREE.CameraHelper(camera);
+      scene.add(helper);
+      const controls = new OrbitControls(camera, canvas);
+      controls.target.set(0, 0, 0);
+      controls.update();
+      this.orbitControl = controls;
+    }
+    this.scene.add(camera);
   }
 
   createLight() {
@@ -58,29 +89,6 @@ class Stage {
     const lightHelper = new THREE.DirectionalLightHelper(light, 4);
     scene.add(lightHelper);
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-  }
-
-  createCamera(near = 0.1) {
-    const { height, width, canvas, scene } = this;
-    const far = width * 10;
-    const camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, near, far);
-    const cameraLookAtPostion = (this.cameraLookAtPostion = scene.position);
-    // 稍后调整相机位置
-    camera.position.set(-width * 4, -height * 2, height * 2);
-    camera.up.set(0, 0, 1);
-    camera.lookAt(cameraLookAtPostion);
-    this.camera = camera;
-
-    if (this.cameraHelpers) {
-      // 相机helper
-      const helper = new THREE.CameraHelper(camera);
-      scene.add(helper);
-      const controls = new OrbitControls(camera, canvas);
-      controls.target.set(0, 0, 0);
-      controls.update();
-      this.orbitControl = controls;
-    }
-    this.scene.add(camera);
   }
 
   movePlaneAndLight(vector) {
@@ -166,6 +174,7 @@ class Stage {
 
   createWebGlRender() {
     const { canvas } = this;
+    // 初始化渲染器
     const renderer = (this.renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
